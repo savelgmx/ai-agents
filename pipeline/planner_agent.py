@@ -1,34 +1,31 @@
-import json
 from llm_client import call_llm
+from utils.prompt_builder import build_prompt
+from utils.json_utils import extract_json
+from memory.memory_agent import load_stage, save_stage, get_full_context
+
+
+def load_system():
+    return open("pipeline/system_prompt.txt").read()
+
 
 def run_planner():
 
-    with open("pipeline/plan.json", "r", encoding="utf-8") as f:
-        plan = json.load(f)
+    system = load_system()
+    architecture = load_stage("architecture")
+    context = get_full_context()
 
-    prompt = f"""
-You are a Senior Android Tech Lead.
+    task = f"""
+Based on architecture:
+{architecture}
 
-Convert architecture into file plan.
-
-Architecture:
-{json.dumps(plan, indent=2)}
-
-Return JSON:
-[
-  {{
-    "path": "",
-    "description": ""
-  }}
-]
+Return JSON file structure.
 """
 
-    response = call_llm(prompt)
+    prompt = build_prompt(system, context, task)
 
-    with open("pipeline/files.json", "w", encoding="utf-8") as f:
-        f.write(response)
+    result = call_llm(prompt)
+    parsed = extract_json(result)
 
+    save_stage("plan", parsed)
     print("✅ Planner done")
-
-if __name__ == "__main__":
-    run_planner()
+    return parsed

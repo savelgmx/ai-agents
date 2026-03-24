@@ -1,38 +1,32 @@
-﻿import json
-from llm_client import call_llm
+﻿from llm_client import call_llm
+from utils.prompt_builder import build_prompt
+from utils.json_utils import extract_json
+from memory.memory_agent import save_stage, get_full_context
+from memory.context_loader import load_relevant_code
 
-def load_system_prompt():
-    with open("architect/system_prompt.txt", "r", encoding="utf-8") as f:
-        return f.read()
 
-def extract_json(text: str):
-    try:
-        return json.loads(text)
-    except:
-        start = text.find("{")
-        end = text.rfind("}") + 1
-        return json.loads(text[start:end])
+def load_system():
+    return open("architect/system_prompt.txt").read()
+
 
 def run_architect(feature: str):
 
-    system = load_system_prompt()
+    system = load_system()
+    context = get_full_context() + load_relevant_code()
 
-    prompt = f"""
-{system}
-
-Feature:
+    task = f"""
+Design architecture for:
 {feature}
+
+Return JSON:
+{{}}
 """
 
-    response = call_llm(prompt, model="qwen2.5-coder:3b")
+    prompt = build_prompt(system, context, task)
 
-    parsed = extract_json(response)
+    result = call_llm(prompt, model="mistral:7b")
+    parsed = extract_json(result)
 
-    with open("pipeline/plan.json", "w", encoding="utf-8") as f:
-        json.dump(parsed, f, indent=2)
-
+    save_stage("architecture", parsed)
     print("✅ Architect done")
-
-if __name__ == "__main__":
-    feature = input("Feature:\n")
-    run_architect(feature)
+    return parsed

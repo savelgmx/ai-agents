@@ -1,24 +1,23 @@
-import json
 import os
+from memory.memory_agent import load_stage
+
+OUTPUT_DIR = "generated"
+
 
 def run_writer():
 
-    with open("pipeline/code_reviewed.json", "r", encoding="utf-8") as f:
-        files = json.load(f)
+    files = load_stage("code_final")
 
-    for file in files:
+    if not files:
+        print("❌ No files")
+        return
 
-        path = file["path"]
-        code = file["code"]
+    for f in files:
+        path = os.path.join(OUTPUT_DIR, f["file"])
 
         os.makedirs(os.path.dirname(path), exist_ok=True)
 
-        with open(path, "w", encoding="utf-8") as f:
-            f.write(code)
-
-        print(f"Created {path}")
+        with open(path, "w", encoding="utf-8") as file:
+            file.write(f["code"])
 
     print("✅ Files written")
-
-if __name__ == "__main__":
-    run_writer()

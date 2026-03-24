@@ -1,13 +1,18 @@
-import chromadb
+import os
 
-client = chromadb.Client()
-collection = client.get_or_create_collection("android_project")
+MAX_CHARS = 10000
 
-def get_context(query):
+def load_relevant_code(path="app"):
 
-    results = collection.query(
-        query_texts=[query],
-        n_results=3
-    )
+    code = ""
 
-    return "\n\n".join(results["documents"][0])
+    for root, _, files in os.walk(path):
+        for f in files:
+            if f.endswith(".kt"):
+                try:
+                    with open(os.path.join(root, f), "r", encoding="utf-8") as file:
+                        code += file.read() + "\n\n"
+                except:
+                    pass
+
+    return code[:MAX_CHARS]

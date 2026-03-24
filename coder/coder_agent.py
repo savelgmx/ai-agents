@@ -1,36 +1,39 @@
-import json
 from llm_client import call_llm
+from utils.prompt_builder import build_prompt
+from utils.json_utils import extract_json
+from memory.memory_agent import load_stage, save_stage, get_full_context
+from memory.context_loader import load_relevant_code
+
+
+def load_system():
+    return open("coder/system_prompt.txt").read()
+
 
 def run_coder():
 
-    with open("pipeline/plan.json", "r", encoding="utf-8") as f:
-        plan = json.load(f)
+    system = load_system()
+    plan = load_stage("plan")
 
-    prompt = f"""
-You are a Senior Android Kotlin developer.
+    context = get_full_context() + load_relevant_code()
 
-Follow Clean Architecture strictly.
-
-Architecture:
-{json.dumps(plan, indent=2)}
-
-Generate Kotlin code.
+    task = f"""
+Generate FULL Kotlin implementation for:
+{plan}
 
 Return JSON:
 [
   {{
-    "path": "",
+    "file": "",
     "code": ""
   }}
 ]
 """
 
-    response = call_llm(prompt, model="deepseek-coder:1.3b")
+    prompt = build_prompt(system, context, task)
 
-    with open("pipeline/code.json", "w", encoding="utf-8") as f:
-        f.write(response)
+    result = call_llm(prompt)
+    parsed = extract_json(result)
 
-    print("✅ Code generated")
-
-if __name__ == "__main__":
-    run_coder()
+    save_stage("code_raw", parsed)
+    print("✅ Coder done")
+    return parsed

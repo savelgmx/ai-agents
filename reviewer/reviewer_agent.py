@@ -1,32 +1,31 @@
-import json
 from llm_client import call_llm
+from utils.prompt_builder import build_prompt
+from utils.json_utils import extract_json
+from memory.memory_agent import load_stage, save_stage, get_full_context
+
+
+def load_system():
+    return open("reviewer/system_prompt.txt").read()
+
 
 def run_reviewer():
 
-    with open("pipeline/code.json", "r", encoding="utf-8") as f:
-        code = f.read()
+    system = load_system()
+    code = load_stage("code_raw")
+    context = get_full_context()
 
-    prompt = f"""
-You are a strict Android reviewer.
-
-Fix:
-- architecture violations
-- bad Kotlin practices
-- coroutine misuse
-
-Improve this code:
-
+    task = f"""
+Fix and improve this code:
 {code}
 
-Return same JSON format.
+Return JSON.
 """
 
-    response = call_llm(prompt, model="qwen2.5-coder:3b")
+    prompt = build_prompt(system, context, task)
 
-    with open("pipeline/code_reviewed.json", "w", encoding="utf-8") as f:
-        f.write(response)
+    result = call_llm(prompt)
+    parsed = extract_json(result)
 
-    print("✅ Review done")
-
-if __name__ == "__main__":
-    run_reviewer()
+    save_stage("code_final", parsed)
+    print("✅ Reviewer done")
+    return parsed
