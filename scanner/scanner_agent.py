@@ -1,16 +1,21 @@
 import os
 
-def scan_project(path="app"):
+MAX_CHARS = 12000
 
-    code = ""
+def scan_project(path="app", extensions=(".kt", ".xml", ".json")):
+
+    code = []
 
     for root, _, files in os.walk(path):
         for f in files:
-            if f.endswith(".kt"):
+            if f.endswith(extensions):
                 try:
                     with open(os.path.join(root, f), "r", encoding="utf-8") as file:
-                        code += file.read() + "\n\n"
+                        content = file.read()
+                        code.append(f"\n--- FILE: {f} ---\n{content}")
                 except:
                     pass
 
-    return code
+    full_code = "\n".join(code)
+
+    return full_code[:MAX_CHARS]

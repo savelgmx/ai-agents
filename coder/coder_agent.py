@@ -2,7 +2,7 @@ from llm_client import call_llm
 from utils.prompt_builder import build_prompt
 from utils.json_utils import extract_json
 from memory.memory_agent import load_stage, save_stage, get_full_context
-from memory.context_loader import load_relevant_code
+from scanner.scanner_agent import scan_project
 
 
 def load_system():
@@ -14,7 +14,7 @@ def run_coder():
     system = load_system()
     plan = load_stage("plan")
 
-    context = get_full_context() + load_relevant_code()
+    context = get_full_context() + scan_project()
 
     task = f"""
 Generate FULL Kotlin implementation for:
