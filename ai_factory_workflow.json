@@ -1,0 +1,120 @@
+{
+  "name": "AI Android Factory",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "manual_trigger",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [200, 300]
+    },
+    {
+      "parameters": {
+        "command": "python C:\\ai-agents\\architect\\architect_agent.py"
+      },
+      "id": "architect",
+      "name": "Architect",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [400, 300]
+    },
+    {
+      "parameters": {
+        "command": "python C:\\ai-agents\\pipeline\\planner_agent.py"
+      },
+      "id": "planner",
+      "name": "Planner",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [600, 300]
+    },
+    {
+      "parameters": {
+        "command": "python C:\\ai-agents\\coder\\coder_agent.py"
+      },
+      "id": "coder",
+      "name": "Coder",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [800, 300]
+    },
+    {
+      "parameters": {
+        "command": "python C:\\ai-agents\\reviewer\\reviewer_agent.py"
+      },
+      "id": "reviewer",
+      "name": "Reviewer",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [1000, 300]
+    },
+    {
+      "parameters": {
+        "command": "python C:\\ai-agents\\writer\\writer_agent.py"
+      },
+      "id": "writer",
+      "name": "Writer",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [1200, 300]
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Architect",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Architect": {
+      "main": [
+        [
+          {
+            "node": "Planner",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Planner": {
+      "main": [
+        [
+          {
+            "node": "Coder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Coder": {
+      "main": [
+        [
+          {
+            "node": "Reviewer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reviewer": {
+      "main": [
+        [
+          {
+            "node": "Writer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
