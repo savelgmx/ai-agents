@@ -1,6 +1,6 @@
 from llm_client import call_llm
-from utils.prompt_builder import build_prompt
-from utils.json_utils import extract_json
+from utilty.prompt_builder import build_prompt
+from utilty.json_utils import extract_json
 from memory.memory_agent import load_stage, save_stage, get_full_context
 from scanner.scanner_agent import scan_project
 

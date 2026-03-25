@@ -3,24 +3,22 @@ from pipeline.planner_agent import run_planner
 from coder.coder_agent import run_coder
 from reviewer.reviewer_agent import run_reviewer
 from writer.writer_agent import run_writer
-
+from git_agent import create_branch, commit_all
 
 def run_full_pipeline(feature):
 
-    print("🚀 START")
+    create_branch("ai-update")
 
     run_architect(feature)
     run_planner()
     run_coder()
 
-    # 🔥 SELF-HEAL LOOP
-    for i in range(2):
-        print(f"🔁 Review {i+1}")
+    for _ in range(2):
         run_reviewer()
 
     run_writer()
 
-    print("✅ DONE")
+    commit_all("AI generated feature")
 
 
 if __name__ == "__main__":

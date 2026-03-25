@@ -8,6 +8,9 @@ Rules:
 - Group by feature
 - Use proper naming conventions
 - Keep files modular and reusable
+- Use realistic file names based on feature.
+- Do NOT reuse example names.
+
 
 Output STRICT JSON only.
 

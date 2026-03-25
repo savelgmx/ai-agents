@@ -1,9 +1,9 @@
 ﻿from llm_client import call_llm
-from utils.prompt_builder import build_prompt
-from utils.json_utils import extract_json
+from utilty.prompt_builder import build_prompt
+from utilty.json_utils import extract_json
 from memory.memory_agent import save_stage, get_full_context
 from scanner.scanner_agent import scan_project
-
+from config import MODELS
 
 
 def load_system():
@@ -24,8 +24,7 @@ Return JSON:
 """
 
     prompt = build_prompt(system, context, task)
-
-    result = call_llm(prompt, model="mistral:7b")
+    result = call_llm(prompt, model=MODELS["architect"])
     parsed = extract_json(result)
 
     save_stage("architecture", parsed)
