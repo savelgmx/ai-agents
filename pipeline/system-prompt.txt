@@ -13,7 +13,6 @@ IMPORTANT:
 Rules:
 - Follow Clean Architecture
 - Separate domain, data, presentation
-- Group by feature
 - Prefer MODIFY over CREATE when possible
 - Keep changes minimal and safe
 
