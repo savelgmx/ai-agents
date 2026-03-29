@@ -2,17 +2,18 @@ import os
 
 MAX_CHARS = 10000
 
-def load_relevant_code(path="app"):
 
-    code = ""
+def build_relevant_context(mapping):
 
-    for root, _, files in os.walk(path):
-        for f in files:
-            if f.endswith(".kt"):
-                try:
-                    with open(os.path.join(root, f), "r", encoding="utf-8") as file:
-                        code += file.read() + "\n\n"
-                except:
-                    pass
+    context = ""
 
-    return code[:MAX_CHARS]
+    for m in mapping:
+        if m["file"] != "CREATE_NEW":
+            try:
+                with open(m["file"], "r", encoding="utf-8") as f:
+                    code = f.read()
+                    context += f"\n--- {m['file']} ---\n{code}\n"
+            except:
+                pass
+
+    return context[:12000]

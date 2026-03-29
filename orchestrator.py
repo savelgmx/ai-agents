@@ -9,19 +9,10 @@ from approval_agent import approve_changes
 
 def run_full_pipeline(feature):
 
-    log("SYSTEM", "Starting pipeline")
-
-    create_branch("ai-feature")
+    create_branch(feature)
 
     run_architect(feature)
     run_planner()
-    run_coder()
-
-    for i in range(2):
-        log("SYSTEM", f"Review loop {i+1}")
-        run_reviewer()
-
-    run_writer()
 
     changes = run_coder()
 
@@ -29,7 +20,9 @@ def run_full_pipeline(feature):
         print("❌ Cancelled")
         return
 
-    commit_all("AI feature update")
-    log("SYSTEM", "Pipeline finished")
+    run_reviewer()
+    run_writer()
+
+    commit_all("AI update")
 
 
