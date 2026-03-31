@@ -11,3 +11,16 @@ if st.button("Run"):
 
     with open("logs/agent.log") as f:
         st.text(f.read())
+
+def get_user_request():
+
+    feature = input("Enter feature:\n")
+
+    return {
+        "feature": feature
+
+    }
+@app.post("/run")
+def run(data: dict):
+
+    return run_full_pipeline(data["feature"])

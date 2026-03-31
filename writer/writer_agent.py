@@ -1,5 +1,6 @@
 import os
 from memory.memory_agent import load_stage
+from diff.patcher import apply_patch
 
 BACKUP_DIR = "backup"
 
@@ -17,6 +18,7 @@ def backup_file(path):
             f.write(content)
 
 
+
 def run_writer():
 
     files = load_stage("code_raw")
@@ -24,11 +26,12 @@ def run_writer():
     for f in files:
         path = f["file"]
 
-        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "r", encoding="utf-8") as file:
+            old_code = file.read()
 
-        backup_file(path)
+        new_code = apply_patch(old_code, f["code"])
 
         with open(path, "w", encoding="utf-8") as file:
-            file.write(f["code"])
+            file.write(new_code)
 
-        print(f"✅ Updated {path}")
+        print(f"✅ Safely updated {path}")

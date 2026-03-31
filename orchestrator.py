@@ -6,6 +6,8 @@ from writer.writer_agent import run_writer
 from git_agent import create_branch, commit_all
 from logs.logger import log
 from approval_agent import approve_changes
+from build_agent import  run_build
+from test_agent import run_tests
 
 def run_full_pipeline(feature):
 
@@ -23,6 +25,18 @@ def run_full_pipeline(feature):
     run_reviewer()
     run_writer()
 
-    commit_all("AI update")
+    build = run_build()
+
+    if not build["success"]:
+        print("❌ Build failed → fixing...")
+
+        for _ in range(2):
+            run_reviewer()
+            run_coder()
+            run_writer()
+
+    run_tests()
+
+    commit_all("AI feature update")
 
 
