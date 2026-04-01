@@ -1,6 +1,6 @@
 from scanner.file_indexer import index_project
 from scanner.file_targeting import map_targets_to_files
-from memory.context_loader import build_relevant_context
+from memory.context_builder import build_relevant_context
 from utilty.prompt_builder import build_prompt
 from utilty.json_utils import extract_json
 from llm_client import call_llm

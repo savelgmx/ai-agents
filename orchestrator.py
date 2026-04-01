@@ -8,35 +8,42 @@ from logs.logger import log
 from approval_agent import approve_changes
 from build_agent import  run_build
 from test_agent import run_tests
+from scanner.scanner_agent import scan_project
 
 def run_full_pipeline(feature):
 
     create_branch(feature)
 
+    # 1. SCAN
+    project_code = scan_project()
+
+    # 2. DESIGN
     run_architect(feature)
     run_planner()
 
+    # 3. CODE
     changes = run_coder()
 
+    # 4. APPROVAL (ВАЖНО)
     if not approve_changes(changes):
         print("❌ Cancelled")
         return
 
-    run_reviewer()
+    # 5. REVIEW LOOP
+    for _ in range(2):
+        run_reviewer()
+
+    # 6. WRITE (AST patch)
     run_writer()
 
+    # 7. BUILD
     build = run_build()
 
     if not build["success"]:
-        print("❌ Build failed → fixing...")
+        print("❌ Build failed → retry loop")
 
-        for _ in range(2):
-            run_reviewer()
-            run_coder()
-            run_writer()
-
+    # 8. TEST
     run_tests()
 
-    commit_all("AI feature update")
-
-
+    # 9. COMMIT
+    commit_all("AI update")
