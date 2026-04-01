@@ -1,11 +1,11 @@
 import streamlit as st
 import requests
 
-st.title("🤖 AI Android Dev Factory")
+st.title("AI Dev")
 
-feature = st.text_input("Enter feature or task")
+feature = st.text_input("Feature")
 
-if st.button("Run"):
+if st.button("Generate"):
 
     response = requests.post(
         "http://localhost:8000/run",
@@ -14,7 +14,17 @@ if st.button("Run"):
 
     data = response.json()
 
-    st.subheader("Changes")
+    st.session_state["changes"] = data["changes"]
 
-    for change in data.get("changes", []):
+
+if "changes" in st.session_state:
+
+    for change in st.session_state["changes"]:
+        st.subheader(change["file"])
         st.code(change["code"], language="kotlin")
+
+    if st.button("Approve"):
+
+        requests.post("http://localhost:8000/approve")
+
+        st.success("Applied!")

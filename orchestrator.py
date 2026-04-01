@@ -1,49 +1,30 @@
 from architect.architect_agent import run_architect
+from memory.memory_agent import save_stage
 from pipeline.planner_agent import run_planner
 from coder.coder_agent import run_coder
 from reviewer.reviewer_agent import run_reviewer
 from writer.writer_agent import run_writer
 from git_agent import create_branch, commit_all
-from logs.logger import log
-from approval_agent import approve_changes
-from build_agent import  run_build
-from test_agent import run_tests
-from scanner.scanner_agent import scan_project
 
-def run_full_pipeline(feature):
+def run_full_pipeline(feature, preview_only=False):
 
-    create_branch(feature)
-
-    # 1. SCAN
-    project_code = scan_project()
-
-    # 2. DESIGN
     run_architect(feature)
     run_planner()
 
-    # 3. CODE
     changes = run_coder()
 
-    # 4. APPROVAL (ВАЖНО)
-    if not approve_changes(changes):
-        print("❌ Cancelled")
-        return
+    if preview_only:
+        return changes
 
-    # 5. REVIEW LOOP
-    for _ in range(2):
-        run_reviewer()
-
-    # 6. WRITE (AST patch)
+    run_reviewer()
     run_writer()
 
-    # 7. BUILD
-    build = run_build()
+    return changes
 
-    if not build["success"]:
-        print("❌ Build failed → retry loop")
+def apply_approved_changes(changes):
 
-    # 8. TEST
-    run_tests()
+    save_stage("code_raw", changes)
 
-    # 9. COMMIT
-    commit_all("AI update")
+    run_reviewer()
+    run_writer()
+    commit_all("AI approved changes")
