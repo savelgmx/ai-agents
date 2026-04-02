@@ -7,6 +7,9 @@ from llm_client import call_llm
 from memory.memory_agent import load_stage, save_stage
 from scanner.scanner_agent import scan_project
 
+def load_system():
+    return open("coder/system_prompt.txt").read()
+
 
 def run_coder():
 

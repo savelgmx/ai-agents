@@ -4,6 +4,7 @@ from orchestrator import run_full_pipeline
 
 from fastapi import FastAPI
 from orchestrator import run_full_pipeline, apply_approved_changes
+from diff.diff_generator import generate_diff
 
 app = FastAPI()
 
@@ -17,11 +18,31 @@ def run(data: dict):
 
     feature = data.get("feature", "test")
 
-    pending_changes = run_full_pipeline(feature, preview_only=True)
+    changes = run_full_pipeline(feature, preview_only=True)
+
+    enriched = []
+
+    for c in changes:
+
+        try:
+            with open(c["file"], "r", encoding="utf-8") as f:
+                old_code = f.read()
+        except:
+            old_code = ""
+
+        diff = generate_diff(old_code, c["code"])
+
+        enriched.append({
+            **c,
+            "diff": diff["content"],
+            "diff_type": diff["type"]
+        })
+
+    pending_changes = enriched
 
     return {
         "status": "preview",
-        "changes": pending_changes
+        "changes": enriched
     }
 
 

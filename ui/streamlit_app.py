@@ -1,30 +1,41 @@
 import streamlit as st
 import requests
 
-st.title("AI Dev")
+st.title("🚀 AI Dev PR System")
 
 feature = st.text_input("Feature")
 
-if st.button("Generate"):
+if st.button("Create PR"):
 
-    response = requests.post(
+    res = requests.post(
         "http://localhost:8000/run",
         json={"feature": feature}
     )
 
-    data = response.json()
-
-    st.session_state["changes"] = data["changes"]
+    st.session_state["changes"] = res.json()["changes"]
 
 
+# --- DIFF VIEW ---
 if "changes" in st.session_state:
 
-    for change in st.session_state["changes"]:
-        st.subheader(change["file"])
-        st.code(change["code"], language="kotlin")
+    st.subheader("📦 Proposed Changes")
 
-    if st.button("Approve"):
+for c in st.session_state["changes"]:
 
-        requests.post("http://localhost:8000/approve")
+    st.markdown(f"### 📄 {c['file']}")
 
-        st.success("Applied!")
+    if c["diff_type"] == "text":
+        st.code(c["diff"], language="diff")
+    else:
+        st.code(c["diff"])
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        if st.button("✅ Approve PR"):
+            requests.post("http://localhost:8000/approve")
+            st.success("Merged!")
+
+    with col2:
+        if st.button("❌ Reject"):
+            st.warning("Rejected")
