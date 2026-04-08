@@ -12,7 +12,10 @@ if st.button("Create PR"):
         json={"feature": feature}
     )
 
-    st.session_state["changes"] = res.json()["changes"]
+    data = res.json()
+
+    st.session_state["changes"] = data["changes"]
+    st.session_state["logs"] = data.get("logs", [])
 
 
 # --- DIFF VIEW ---
@@ -20,14 +23,37 @@ if "changes" in st.session_state:
 
     st.subheader("📦 Proposed Changes")
 
-for c in st.session_state["changes"]:
+    for idx, c in enumerate(st.session_state["changes"]):
 
-    st.markdown(f"### 📄 {c['file']}")
+        st.markdown(f"### 📄 {c['file']}")
 
-    if c["diff_type"] == "text":
-        st.code(c["diff"], language="diff")
-    else:
-        st.code(c["diff"])
+        tabs = st.tabs(["📊 Diff", "🆚 Side-by-side"])
+
+        # ---------- TAB 1: NORMAL DIFF ----------
+        with tabs[0]:
+            if c["diff_type"] == "text":
+                st.code(c["diff"], language="diff")
+            else:
+                st.code(c["diff"])
+
+        # ---------- TAB 2: SIDE BY SIDE ----------
+        with tabs[1]:
+
+            try:
+                with open(c["file"], "r", encoding="utf-8") as f:
+                    old_code = f.read()
+            except:
+                old_code = ""
+
+            col1, col2 = st.columns(2)
+
+            with col1:
+                st.markdown("#### 🟥 OLD")
+                st.code(old_code, language="kotlin")
+
+            with col2:
+                st.markdown("#### 🟩 NEW")
+                st.code(c["code"], language="kotlin")
 
     col1, col2 = st.columns(2)
 
@@ -39,3 +65,11 @@ for c in st.session_state["changes"]:
     with col2:
         if st.button("❌ Reject"):
             st.warning("Rejected")
+
+# --- LOGS ---
+if "logs" in st.session_state:
+
+    st.subheader("📜 Logs")
+
+    for l in st.session_state["logs"]:
+        st.text(l)

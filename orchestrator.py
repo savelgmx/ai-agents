@@ -5,22 +5,7 @@ from coder.coder_agent import run_coder
 from reviewer.reviewer_agent import run_reviewer
 from writer.writer_agent import run_writer
 from git_agent import create_branch, commit_all
-
-logs = []
-
-
-def log(message: str):
-    print(message)
-    logs.append(message)
-
-
-def get_logs():
-    return logs
-
-
-def clear_logs():
-    global logs
-    logs = []
+from logs.logger import log, get_logs, clear_logs
 
 
 # -------------------------
@@ -31,49 +16,59 @@ def run_full_pipeline(feature, preview_only=False):
 
     clear_logs()
 
-    log(f"🚀 Starting pipeline for: {feature}")
+    log("SYSTEM", f"🚀 Start: {feature}")
 
     try:
         # --- GIT ---
-        log("🌿 Creating git branch...")
+        log("GIT", "🌿 Creating git branch...")
         create_branch(feature)
-        log("✅ Branch created")
+        log("GIT", "Branch created")
 
         # --- ARCHITECT ---
-        log("🧠 Architect running...")
+        log("ARCHITECT", "🧠 Architect running...")
         run_architect(feature)
-        log("✅ Architect done")
+        log("ARCHITECT", "Done")
 
         # --- PLANNER ---
-        log("📐 Planner running...")
+        log("PLANNER", "📐 Planner running...")
         run_planner()
-        log("✅ Planner done")
+        log("PLANNER", "Done")
 
         # --- CODER ---
-        log("💻 Coder running...")
+        log("CODER", "💻 Coder running...")
         changes = run_coder()
-        log(f"✅ Coder done ({len(changes)} files)")
+        log("CODER", f"Done ({len(changes)} files)")
 
+        # --- PREVIEW MODE ---
         if preview_only:
-            log("👀 Preview mode enabled (no changes applied)")
-            return changes
+            log("SYSTEM", "👀 Preview mode")
+            return {
+                "changes": changes,
+                "logs": get_logs()
+            }
 
-        # --- REVIEW LOOP ---
-        log("🔍 Reviewer running...")
-        for i in range(2):
-            log(f"   ↪ Review iteration {i+1}")
-            run_reviewer()
-        log("✅ Review done")
+        # --- REVIEW ---
+        log("REVIEWER", "🔍 Reviewer running...")
+        run_reviewer()
+        log("REVIEWER", "Done")
 
         # --- WRITE ---
-        log("✍️ Writing changes...")
+        log("WRITER", "✍️ Writing changes...")
         run_writer()
-        log("✅ Files updated")
+        log("WRITER", "Files written")
 
-        return changes
+        # --- COMMIT ---
+        log("GIT", "📦 Committing...")
+        commit_all("AI update")
+        log("GIT", "Committed")
+
+        return {
+            "changes": changes,
+            "logs": get_logs()
+        }
 
     except Exception as e:
-        log(f"❌ Pipeline error: {str(e)}")
+        log("ERROR", str(e))
         raise
 
 
@@ -85,25 +80,22 @@ def apply_approved_changes(changes):
 
     clear_logs()
 
-    log("✅ Applying approved changes...")
+    log("SYSTEM", "✅ Applying approved changes...")
 
     try:
         save_stage("code_raw", changes)
 
-        # --- REVIEW ---
-        log("🔍 Reviewer running...")
+        log("REVIEWER", "🔍 Reviewer running...")
         run_reviewer()
 
-        # --- WRITE ---
-        log("✍️ Writing changes...")
+        log("WRITER", "✍️ Writing changes...")
         run_writer()
 
-        # --- COMMIT ---
-        log("📦 Committing to git...")
+        log("GIT", "📦 Committing...")
         commit_all("AI approved changes")
 
-        log("🎉 Done")
+        log("SYSTEM", "🎉 Done")
 
     except Exception as e:
-        log(f"❌ Apply failed: {str(e)}")
+        log("ERROR", str(e))
         raise
