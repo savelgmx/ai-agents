@@ -1,36 +1,35 @@
 import subprocess
 import re
+import os
+
+PROJECT_DIR = "app"  # ключевой фикс
 
 
 def sanitize_branch_name(name: str) -> str:
-    """
-    Convert any feature string into valid git branch name
-    """
     name = name.lower()
-
-    # replace invalid characters
     name = re.sub(r'[^a-z0-9_\-]', '_', name)
+    return f"ai/{name[:50]}"
 
-    # trim long names
-    name = name[:50]
 
-    return f"ai/{name}"
+def run_git_command(cmd):
+    return subprocess.run(
+        cmd,
+        cwd=PROJECT_DIR,  # 🔥 ВАЖНО
+        capture_output=True,
+        text=True
+    )
 
 
 def create_branch(feature: str):
     branch = sanitize_branch_name(feature)
 
-    try:
-        subprocess.run(["git", "checkout", "-b", branch], check=False)
-        print(f"[GIT] Created branch: {branch}")
-    except Exception as e:
-        print(f"[GIT] Branch error: {e}")
+    result = run_git_command(["git", "checkout", "-b", branch])
+
+    print("[GIT]", result.stdout)
+    if result.stderr:
+        print("[GIT ERROR]", result.stderr)
 
 
 def commit_all(message="AI update"):
-    try:
-        subprocess.run(["git", "add", "."], check=False)
-        subprocess.run(["git", "commit", "-m", message], check=False)
-        print("[GIT] Commit done")
-    except Exception as e:
-        print(f"[GIT] Commit error: {e}")
+    run_git_command(["git", "add", "."])
+    run_git_command(["git", "commit", "-m", message])
