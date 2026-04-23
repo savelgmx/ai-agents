@@ -30,3 +30,28 @@ JSON format:
     "code": ""
   }
 ]
+
+CRITICAL JSON RULES:
+
+- Strings MUST use double quotes "
+- NEVER use backticks `
+- NEVER wrap code in markdown
+- Escape all quotes inside code
+- Output must be valid JSON parsable by Python json.loads()
+
+CRITICAL RULES:
+
+- Output MUST be valid JSON
+- DO NOT use triple quotes (""")
+- Escape all strings properly
+- Code must be inside a standard JSON string using \n for new lines
+- DO NOT break JSON formatting under any circumstances
+
+BAD:
+"code": `class A {}`
+
+BAD:
+"code": """class A {}"""
+
+GOOD:
+"code": "class A {}"

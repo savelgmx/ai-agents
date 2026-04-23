@@ -1,10 +1,21 @@
 import subprocess
 import re
+import configparser
 import os
 
-PROJECT_DIR = "app"  # ключевой фикс
+
+# -------------------------
+# LOAD CONFIG
+# -------------------------
+config = configparser.ConfigParser()
+config.read("config.ini")
+
+PROJECT_DIR = config.get("project", "path", fallback="app")
 
 
+# -------------------------
+# HELPERS
+# -------------------------
 def sanitize_branch_name(name: str) -> str:
     name = name.lower()
     name = re.sub(r'[^a-z0-9_\-]', '_', name)
@@ -12,24 +23,51 @@ def sanitize_branch_name(name: str) -> str:
 
 
 def run_git_command(cmd):
-    return subprocess.run(
+    result = subprocess.run(
         cmd,
-        cwd=PROJECT_DIR,  # 🔥 ВАЖНО
+        cwd=PROJECT_DIR,
         capture_output=True,
         text=True
     )
 
+    if result.stdout:
+        print("[GIT]", result.stdout.strip())
 
+    if result.stderr:
+        print("[GIT ERROR]", result.stderr.strip())
+
+    return result
+
+
+# -------------------------
+# MAIN ACTIONS
+# -------------------------
 def create_branch(feature: str):
     branch = sanitize_branch_name(feature)
 
-    result = run_git_command(["git", "checkout", "-b", branch])
+    # Проверка: есть ли уже ветка
+    existing = run_git_command(["git", "branch", "--list", branch])
 
-    print("[GIT]", result.stdout)
-    if result.stderr:
-        print("[GIT ERROR]", result.stderr)
+    if existing.stdout.strip():
+        print(f"[GIT] Branch exists, switching: {branch}")
+        run_git_command(["git", "checkout", branch])
+        return branch
+
+    run_git_command(["git", "checkout", "-b", branch])
+
+    print(f"[GIT] Created branch: {branch}")
+    return branch
 
 
 def commit_all(message="AI update"):
     run_git_command(["git", "add", "."])
-    run_git_command(["git", "commit", "-m", message])
+
+    # commit может упасть если нет изменений
+    result = run_git_command(["git", "commit", "-m", message])
+
+    if "nothing to commit" in result.stderr.lower():
+        print("[GIT] Nothing to commit")
+
+
+def push_branch(branch):
+    run_git_command(["git", "push", "-u", "origin", branch])
