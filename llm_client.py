@@ -8,7 +8,10 @@ def call_llm(prompt, model="qwen2.5-coder:3b"):
         response = requests.post(OLLAMA_URL, json={
             "model": model,
             "prompt": prompt,
-            "stream": False
+            "stream": False,
+            "options":{
+                "num_predict": 2048  # ВАЖНО
+            }
         })
 
         return response.json()["response"]
