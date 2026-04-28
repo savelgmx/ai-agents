@@ -10,12 +10,17 @@ import os
 config = configparser.ConfigParser()
 config.read("config.ini")
 
-PROJECT_DIR = config.get("project", "path", fallback="app")
+PROJECT_DIR = config.get("project", "path", fallback=".")
+
+# --- VALIDATION ---
+if not os.path.exists(PROJECT_DIR):
+    raise Exception(f"❌ PROJECT_DIR not found: {PROJECT_DIR}")
+
+if not os.path.exists(os.path.join(PROJECT_DIR, ".git")):
+    raise Exception(f"❌ Not a git repo: {PROJECT_DIR}")
 
 
-# -------------------------
-# HELPERS
-# -------------------------
+# --- HELPERS ---
 def sanitize_branch_name(name: str) -> str:
     name = name.lower()
     name = re.sub(r'[^a-z0-9_\-]', '_', name)
@@ -23,51 +28,33 @@ def sanitize_branch_name(name: str) -> str:
 
 
 def run_git_command(cmd):
-    result = subprocess.run(
+    return subprocess.run(
         cmd,
-        cwd=PROJECT_DIR,
+        cwd=PROJECT_DIR,   # 🔥 теперь строго из config.ini
         capture_output=True,
         text=True
     )
 
-    if result.stdout:
-        print("[GIT]", result.stdout.strip())
 
-    if result.stderr:
-        print("[GIT ERROR]", result.stderr.strip())
-
-    return result
-
-
-# -------------------------
-# MAIN ACTIONS
-# -------------------------
+# --- MAIN ---
 def create_branch(feature: str):
     branch = sanitize_branch_name(feature)
 
-    # Проверка: есть ли уже ветка
-    existing = run_git_command(["git", "branch", "--list", branch])
+    # Проверим существование ветки
+    result = run_git_command(["git", "branch"])
 
-    if existing.stdout.strip():
+    if branch in result.stdout:
         print(f"[GIT] Branch exists, switching: {branch}")
         run_git_command(["git", "checkout", branch])
-        return branch
+        return
 
-    run_git_command(["git", "checkout", "-b", branch])
+    result = run_git_command(["git", "checkout", "-b", branch])
 
-    print(f"[GIT] Created branch: {branch}")
-    return branch
+    print("[GIT]", result.stdout)
+    if result.stderr:
+        print("[GIT ERROR]", result.stderr)
 
 
 def commit_all(message="AI update"):
     run_git_command(["git", "add", "."])
-
-    # commit может упасть если нет изменений
-    result = run_git_command(["git", "commit", "-m", message])
-
-    if "nothing to commit" in result.stderr.lower():
-        print("[GIT] Nothing to commit")
-
-
-def push_branch(branch):
-    run_git_command(["git", "push", "-u", "origin", branch])
+    run_git_command(["git", "commit", "-m", message])
