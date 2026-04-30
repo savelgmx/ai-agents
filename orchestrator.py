@@ -7,6 +7,8 @@ from writer.writer_agent import run_writer
 from git_agent import create_branch, commit_all
 from logs.logger import log, get_logs, clear_logs
 
+from build_agent import run_gradle_build
+from test_agent import run_tests_generation
 
 # -------------------------
 # MAIN PIPELINE
@@ -22,7 +24,7 @@ def run_full_pipeline(feature, preview_only=False):
         # --- GIT ---
         log("GIT", "🌿 Creating git branch...")
         create_branch(feature)
-        log("GIT", "Branch created")
+        log("GIT", "Branch ready")
 
         # --- ARCHITECT ---
         log("ARCHITECT", "🧠 Architect running...")
@@ -37,13 +39,39 @@ def run_full_pipeline(feature, preview_only=False):
         # --- CODER ---
         log("CODER", "💻 Coder running...")
         changes = run_coder()
-        log("CODER", f"Done ({len(changes)} files)")
+        log("CODER", f"Generated {len(changes)} files")
 
-        # --- PREVIEW MODE ---
+        # -------------------------
+        # 🧠 BUILD VALIDATION
+        # -------------------------
+        log("BUILD", "🔨 Running Gradle build...")
+        build_result = run_gradle_build()
+
+        if not build_result["success"]:
+            log("BUILD", "❌ Build FAILED")
+            log("BUILD", build_result["output"][:1000])
+
+            return {
+                "changes": changes,
+                "logs": get_logs(),
+                "build_failed": True
+            }
+
+        log("BUILD", "✅ Build OK")
+
+        # -------------------------
+        # 🧪 TEST GENERATION
+        # -------------------------
+        log("TEST", "🧪 Generating tests...")
+        tests = run_tests_generation()
+        log("TEST", f"Generated {len(tests)} tests")
+
+        # --- PREVIEW ---
         if preview_only:
             log("SYSTEM", "👀 Preview mode")
             return {
                 "changes": changes,
+                "tests": tests,
                 "logs": get_logs()
             }
 
@@ -53,7 +81,7 @@ def run_full_pipeline(feature, preview_only=False):
         log("REVIEWER", "Done")
 
         # --- WRITE ---
-        log("WRITER", "✍️ Writing changes...")
+        log("WRITER", "✍️ Applying changes...")
         run_writer()
         log("WRITER", "Files written")
 
@@ -64,6 +92,7 @@ def run_full_pipeline(feature, preview_only=False):
 
         return {
             "changes": changes,
+            "tests": tests,
             "logs": get_logs()
         }
 
@@ -87,8 +116,6 @@ def apply_approved_changes(changes):
 
         log("REVIEWER", "🔍 Reviewer running...")
         run_reviewer()
-
-        log("WRITER", "✍️ Writing changes...")
         run_writer()
 
         log("GIT", "📦 Committing...")
