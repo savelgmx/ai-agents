@@ -1,18 +1,31 @@
 from llm_client import call_llm
 from memory.memory_agent import load_stage, save_stage
 from utilty.json_utils import extract_json
+from memory.context_builder import build_relevant_context
 
 
 def auto_fix_build(build_output):
 
-    code = load_stage("code_raw")
+    code_changes = load_stage("code_raw") or []
+
+    # 🔥 context теперь строится из memory_store
+    context = build_relevant_context()
 
     prompt = f"""
+You are Senior Android Kotlin Engineer.
+
 Build failed.
 
-Fix the code.
+Fix ONLY build/compiler/runtime errors.
 
-Return JSON:
+IMPORTANT:
+- Return STRICT JSON
+- Do not use markdown
+- Do not use triple quotes
+- Do not rewrite unrelated files
+- Keep fixes minimal and safe
+
+JSON format:
 [
   {{
     "file": "",
@@ -23,18 +36,27 @@ Return JSON:
 Build errors:
 {build_output}
 
-Code:
-{code}
+Relevant project context:
+{context}
+
+Current generated changes:
+{code_changes}
 """
 
     result = call_llm(prompt)
 
     try:
         fixes = extract_json(result)
-    except:
+
+    except Exception as e:
+
+        print("❌ AUTO FIX JSON ERROR")
+        print(result[:2000])
+
         fixes = []
 
-    save_stage("code_raw", fixes)
+    if fixes:
+        save_stage("code_raw", fixes)
 
     print("🔧 Auto-fix applied")
 

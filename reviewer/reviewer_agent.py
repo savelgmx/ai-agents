@@ -2,6 +2,9 @@ from llm_client import call_llm
 from utilty.prompt_builder import build_prompt
 from utilty.json_utils import extract_json
 from memory.memory_agent import load_stage, save_stage, get_full_context
+from memory.context_builder import build_relevant_context
+
+
 
 #Обновлённый reviewer_agent.py (ПОЛНЫЙ)
 # Теперь он делает:
@@ -20,8 +23,10 @@ def run_reviewer():
 
     system = load_system()
     code = load_stage("code_raw")
-    context = get_full_context()
-
+    #context = get_full_context()
+    #было:get_full_context() → огромный JSON
+    #стало:build_relevant_context() → структурированный контекст
+    context = build_relevant_context()
     task = f"""
 Fix and improve this code:
 {code}
