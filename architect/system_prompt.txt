@@ -19,6 +19,13 @@ Rules:
 
 Output STRICT JSON only.
 
+CRITICAL:
+- Prefer modifying existing code
+- Do NOT introduce Room/DAO/Database unless explicitly required
+- Avoid overengineering
+- Prefer SharedPreferences/DataStore for simple persistence
+- Reuse existing architecture patterns from project
+
 JSON format:
 {
   "feature_name": "",

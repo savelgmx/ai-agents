@@ -3,34 +3,39 @@ from scanner.file_targeting import map_targets_to_files
 from memory.context_builder import build_relevant_context
 from utilty.prompt_builder import build_prompt
 from utilty.json_utils import extract_json
-from llm_client import call_llm
-from memory.memory_agent import load_stage, save_stage
-from scanner.scanner_agent import scan_project
+from memory.context_builder import build_relevant_context
+from memory.memory_agent import (
+    load_stage,
+    save_stage,
+    get_full_context
+)
+
 
 def load_system():
-    return open("coder/system_prompt.txt").read()
+    return open("coder/system_prompt.txt", encoding="utf-8").read()
 
 
 def run_coder():
 
+    system = load_system()
+
+    architecture = load_stage("architecture")
     plan = load_stage("plan")
 
-    file_index = index_project()
-
-    mapping = map_targets_to_files(plan, file_index)
-
-    relevant_context = build_relevant_context(mapping)
-
-    full_context = relevant_context + "\n\n" + scan_project()
+    # 🔥 Новый unified context builder
+    relevant_context = build_relevant_context()
 
     task = f"""
-Apply changes safely to existing project.
+Generate production-ready Kotlin code.
 
-PLAN:
+Architecture:
+{architecture}
+
+Plan:
 {plan}
 
-FILE MAPPING:
-{mapping}
+Relevant project context:
+{relevant_context}
 
 IMPORTANT:
 - MODIFY existing files when possible
@@ -48,12 +53,18 @@ Return JSON:
 ]
 """
 
-    prompt = build_prompt(load_system(), full_context, task)
+    prompt = build_prompt(
+        system,
+        get_full_context(),
+        task
+    )
 
     result = call_llm(prompt)
 
     parsed = extract_json(result)
 
     save_stage("code_raw", parsed)
+
+    print("✅ Coder done")
 
     return parsed
