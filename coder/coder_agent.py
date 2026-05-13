@@ -1,6 +1,6 @@
+from llm_client import call_llm
 from scanner.file_indexer import index_project
 from scanner.file_targeting import map_targets_to_files
-from memory.context_builder import build_relevant_context
 from utilty.prompt_builder import build_prompt
 from utilty.json_utils import extract_json
 from memory.context_builder import build_relevant_context
@@ -12,7 +12,11 @@ from memory.memory_agent import (
 
 
 def load_system():
-    return open("coder/system_prompt.txt", encoding="utf-8").read()
+
+    return open(
+        "coder/system_prompt.txt",
+        encoding="utf-8"
+    ).read()
 
 
 def run_coder():
@@ -22,9 +26,29 @@ def run_coder():
     architecture = load_stage("architecture")
     plan = load_stage("plan")
 
-    # 🔥 Новый unified context builder
-    relevant_context = build_relevant_context()
+    # -------------------------
+    # PROJECT INDEX
+    # -------------------------
+    file_index = index_project()
 
+    # -------------------------
+    # TARGET MAPPING
+    # -------------------------
+    mapping = map_targets_to_files(
+        plan,
+        file_index
+    )
+
+    # -------------------------
+    # RELEVANT CONTEXT
+    # -------------------------
+    relevant_context = build_relevant_context(
+        mapping
+    )
+
+    # -------------------------
+    # TASK
+    # -------------------------
     task = f"""
 Generate production-ready Kotlin code.
 

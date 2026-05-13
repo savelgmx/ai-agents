@@ -1,60 +1,129 @@
 import subprocess
 import re
-import configparser
-import os
+
+from config.config_loader import get_project_path
 
 
-# -------------------------
-# LOAD CONFIG
-# -------------------------
-config = configparser.ConfigParser()
-config.read("config.ini")
+# ==========================================
+# CONFIG
+# ==========================================
 
-PROJECT_DIR = config.get("project", "path", fallback=".")
-
-# --- VALIDATION ---
-if not os.path.exists(PROJECT_DIR):
-    raise Exception(f"❌ PROJECT_DIR not found: {PROJECT_DIR}")
-
-if not os.path.exists(os.path.join(PROJECT_DIR, ".git")):
-    raise Exception(f"❌ Not a git repo: {PROJECT_DIR}")
+PROJECT_PATH = get_project_path()
 
 
-# --- HELPERS ---
-def sanitize_branch_name(name: str) -> str:
+# ==========================================
+# HELPERS
+# ==========================================
+
+def sanitize_branch_name(name: str):
+
     name = name.lower()
-    name = re.sub(r'[^a-z0-9_\-]', '_', name)
+
+    name = re.sub(
+        r"[^a-z0-9_\-]",
+        "_",
+        name
+    )
+
     return f"ai/{name[:50]}"
 
 
 def run_git_command(cmd):
+
     return subprocess.run(
         cmd,
-        cwd=PROJECT_DIR,   # 🔥 теперь строго из config.ini
+        cwd=PROJECT_PATH,
         capture_output=True,
         text=True
     )
 
 
-# --- MAIN ---
+# ==========================================
+# BRANCHING
+# ==========================================
+
 def create_branch(feature: str):
+
     branch = sanitize_branch_name(feature)
 
-    # Проверим существование ветки
-    result = run_git_command(["git", "branch"])
+    existing = run_git_command([
+        "git",
+        "branch",
+        "--list",
+        branch
+    ])
 
-    if branch in result.stdout:
-        print(f"[GIT] Branch exists, switching: {branch}")
-        run_git_command(["git", "checkout", branch])
-        return
+    # -------------------------
+    # SWITCH IF EXISTS
+    # -------------------------
+    if existing.stdout.strip():
 
-    result = run_git_command(["git", "checkout", "-b", branch])
+        print(
+            f"[GIT] Branch exists, switching: {branch}"
+        )
 
-    print("[GIT]", result.stdout)
-    if result.stderr:
-        print("[GIT ERROR]", result.stderr)
+        switch_result = run_git_command([
+            "git",
+            "checkout",
+            branch
+        ])
 
+        if switch_result.returncode != 0:
+            print("[GIT ERROR]")
+            print(switch_result.stderr)
+
+        print("[GIT] Branch ready")
+
+        return branch
+
+    # -------------------------
+    # CREATE NEW BRANCH
+    # -------------------------
+    result = run_git_command([
+        "git",
+        "checkout",
+        "-b",
+        branch
+    ])
+
+    if result.returncode != 0:
+
+        print("[GIT ERROR]")
+        print(result.stderr)
+
+        raise Exception(
+            f"Failed to create branch: {branch}"
+        )
+
+    print(result.stdout)
+    print("[GIT] Branch ready")
+
+    return branch
+
+
+# ==========================================
+# COMMIT
+# ==========================================
 
 def commit_all(message="AI update"):
-    run_git_command(["git", "add", "."])
-    run_git_command(["git", "commit", "-m", message])
+
+    # add all tracked/untracked changes
+    run_git_command([
+        "git",
+        "add",
+        "-A"
+    ])
+
+    result = run_git_command([
+        "git",
+        "commit",
+        "-m",
+        message
+    ])
+
+    print(result.stdout)
+
+    if result.returncode != 0:
+        print(result.stderr)
+
+    return result.returncode == 0

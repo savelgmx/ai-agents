@@ -1,18 +1,40 @@
 import subprocess
-import configparser
+import os
 
-config = configparser.ConfigParser()
-config.read("config.ini")
+from config.config_loader import get_project_path
 
-PROJECT_DIR = config.get("project", "path", fallback="app")
+PROJECT_DIR = get_project_path()
 
+# ==========================================
+# VALIDATION
+# ==========================================
+
+if not os.path.exists(PROJECT_DIR):
+    raise Exception(
+        f"❌ PROJECT_DIR not found: {PROJECT_DIR}"
+    )
+
+GRADLEW_PATH = os.path.join(
+    PROJECT_DIR,
+    "gradlew.bat"
+)
+
+if not os.path.exists(GRADLEW_PATH):
+    raise Exception(
+        f"❌ gradlew.bat not found: {GRADLEW_PATH}"
+    )
+
+# ==========================================
+# BUILD
+# ==========================================
 
 def run_gradle_build():
 
     print("🔨 Running Gradle build...")
+    print(f"📂 PROJECT_DIR: {PROJECT_DIR}")
 
     result = subprocess.run(
-        ["gradlew.bat", "build"],
+        [GRADLEW_PATH, "assembleDebug"],
         cwd=PROJECT_DIR,
         capture_output=True,
         text=True
@@ -20,7 +42,18 @@ def run_gradle_build():
 
     success = result.returncode == 0
 
+    output = (
+            result.stdout +
+            "\n" +
+            result.stderr
+    )
+
+    if success:
+        print("✅ Build successful")
+    else:
+        print("❌ Build failed")
+
     return {
         "success": success,
-        "output": result.stdout + result.stderr
+        "output": output
     }
