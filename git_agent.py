@@ -1,7 +1,7 @@
 import subprocess
 import re
 
-from config.config_loader import get_project_path
+from config_loader import get_project_path
 
 
 # ==========================================
